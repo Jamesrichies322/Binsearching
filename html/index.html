@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sell Shop</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            /* background: linear-gradient(135deg, #232526 0%, #414345 100%); */
+            min-height: 100vh;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal {
+            background: rgba(30, 30, 40, 0.98);
+            border-radius: 18px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            padding: 32px 28px 24px 28px;
+            min-width: 350px;
+            max-width: 95vw;
+            width: 420px;
+            position: relative;
+        }
+        .modal h2 {
+            margin: 0 0 18px 0;
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+        .close-btn {
+            position: absolute;
+            top: 18px;
+            right: 22px;
+            font-size: 1.5rem;
+            color: #aaa;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .close-btn:hover {
+            color: #fff;
+        }
+        .item-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+        .item-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        .item-list::-webkit-scrollbar-track {
+            background: rgba(30, 30, 40, 0.5);
+            border-radius: 4px;
+        }
+        .item-list::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #00c6ff 0%, #0072ff 100%);
+            border-radius: 4px;
+        }
+        .item-list::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #0072ff 0%, #00c6ff 100%);
+        }
+        .item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(44, 44, 60, 0.95);
+            border-radius: 10px;
+            margin-bottom: 14px;
+            padding: 14px 18px;
+            transition: background 0.2s;
+        }
+        .item:last-child { margin-bottom: 0; }
+        .item .icon {
+            font-size: 1.7rem;
+            margin-right: 16px;
+            color: #ffd700;
+        }
+        .item .info {
+            flex: 1;
+        }
+        .item .info .label {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .item .info .count {
+            font-size: 0.95rem;
+            color: #aaa;
+        }
+        .item .sell {
+            display: flex;
+            align-items: center;
+        }
+        .item .sell input {
+            width: 60px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: none;
+            margin-right: 10px;
+            font-size: 1rem;
+            background: #232526;
+            color: #fff;
+        }
+        .item .sell button {
+            background: linear-gradient(90deg, #00c6ff 0%, #0072ff 100%);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 16px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .item .sell button:hover {
+            background: linear-gradient(90deg, #0072ff 0%, #00c6ff 100%);
+        }
+        @media (max-width: 500px) {
+            .modal { width: 98vw; min-width: unset; padding: 18px 6px 12px 6px; }
+            .item { flex-direction: column; align-items: flex-start; }
+            .item .sell { margin-top: 8px; }
+        }
+    </style>
+</head>
+<body style="display:none;">
+    <audio id="audioPlayer" preload="auto">
+        <source src="../sounds/searching.mp3" type="audio/mpeg">
+    </audio>
+    
+    <div class="modal" id="sellShopModal">
+        <span class="close-btn" id="closeBtn"><i class="fa-solid fa-xmark"></i></span>
+        <h2><i class="fa-solid fa-recycle"></i> Sell Bin Items</h2>
+        <ul class="item-list" id="itemList"></ul>
+    </div>
+    <script>
+        let currency = '$';
+        const audioPlayer = document.getElementById('audioPlayer');
+        
+        window.addEventListener('message', function(event) {
+            if (event.data.action === 'openSellShop') {
+                document.body.style.display = 'flex';
+                currency = event.data.currency || '$';
+                renderItems(event.data.items || []);
+            } else if (event.data.type === 'playSound') {
+                audioPlayer.currentTime = 0;
+                audioPlayer.play().catch(function(error) {
+                    console.log('Audio playback failed:', error);
+                });
+            }
+        });
+        function closeShop() {
+            document.body.style.display = 'none';
+            fetch(`https://${GetParentResourceName()}/closeSellShop`, { method: 'POST', body: '{}' });
+        }
+        document.getElementById('closeBtn').onclick = closeShop;
+        function renderItems(items) {
+            const list = document.getElementById('itemList');
+            list.innerHTML = '';
+            if (!items.length) {
+                list.innerHTML = '<li style="text-align:center;color:#aaa;">No items to sell</li>';
+                return;
+            }
+            items.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'item';
+                const isDisabled = item.count <= 0;
+                li.innerHTML = `
+                    <span class="icon"><i class="fa-solid fa-box"></i></span>
+                    <div class="info">
+                        <div class="label">${item.label}</div>
+                        <div class="count">You have: ${item.count}</div>
+                    </div>
+                    <div class="sell">
+                        <input type="number" min="1" max="${item.count}" value="1" id="input_${item.name}" ${isDisabled ? 'disabled' : ''}>
+                        <button onclick="sellItem('${item.name}', ${item.price}, ${item.count})" ${isDisabled ? 'disabled' : ''} style="${isDisabled ? 'opacity: 0.5; cursor: not-allowed;' : ''}">
+                            <i class="fa-solid fa-dollar-sign"></i> Sell
+                        </button>
+                    </div>
+                `;
+                list.appendChild(li);
+            });
+        }
+        window.sellItem = function(itemName, price, maxCount) {
+            const input = document.getElementById('input_' + itemName);
+            let amount = parseInt(input.value);
+            if (isNaN(amount) || amount < 1) amount = 1;
+            if (amount > maxCount) amount = maxCount;
+            fetch(`https://${GetParentResourceName()}/sellItem`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ item: itemName, amount: amount })
+            });
+        }
+        window.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeShop();
+        });
+    </script>
+</body>
+</html> 
