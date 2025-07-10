@@ -3,8 +3,8 @@ Config = {}
 -- General Settings
 Config.Target = 'ox_target' -- OX_TARGET OR QB-TARGET
 Config.Inventory = 'ox_inventory' -- OX_INVENTORY OR QB-INVENTORY
-Config.Notify = 'ox_lib' -- OX_LIB OR QB-MENU
-Config.Progressbar = 'ox_lib' -- OX_LIB OR QB-MENU
+Config.Notify = 'ox_lib' -- Options: 'ox_lib', 'qb'
+Config.Progressbar = 'ox_lib' -- Options: 'ox_lib', 'qb'
 Config.SellMenu = 'custom' -- Options: 'ox_lib', 'qb', 'custom'
 
 -- Language Settings
